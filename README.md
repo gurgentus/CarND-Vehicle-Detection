@@ -1,13 +1,4 @@
-**Vehicle Detection Project**
-
-The goals / steps of this project are the following:
-
-* Perform a Histogram of Oriented Gradients (HOG) feature extraction on a labeled training set of images and train a classifier Linear SVM classifier
-* Optionally, you can also apply a color transform and append binned color features, as well as histograms of color, to your HOG feature vector.
-* Note: for those first two steps don't forget to normalize your features and randomize a selection for training and testing.
-* Implement a sliding-window technique and use your trained classifier to search for vehicles in images.
-* Run your pipeline on a video stream (start with the test_video.mp4 and later implement on full project_video.mp4) and create a heat map of recurring detections frame by frame to reject outliers and follow detected vehicles.
-* Estimate a bounding box for vehicles detected.
+**Vehicle Detection**
 
 [//]: # (Image References)
 [image1]: ./output_images/random_image.png
@@ -27,19 +18,9 @@ The goals / steps of this project are the following:
 [image9]: ./output_images/test4_out.jpeg
 [video1]: ./detect.mp4
 
-## [Rubric](https://review.udacity.com/#!/rubrics/513/view) Points
-### Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
-
----
-### Writeup / README
-
-#### 1. Provide a Writeup / README that includes all the rubric points and how you addressed each one.  You can submit your writeup as markdown or pdf.  [Here](https://github.com/udacity/CarND-Vehicle-Detection/blob/master/writeup_template.md) is a template writeup for this project you can use as a guide and a starting point.  
-
-This is it!
-
 ### Histogram of Oriented Gradients (HOG)
 
-#### 1. Explain how (and identify where in your code) you extracted HOG features from the training images.
+#### 1. HOG Feature Extraction
 
 A wrapper function `get_hog_features()` for calling `skimage.hog()` function is located in lines 45-67.  It provides a couple of additional options having to do with visualization.  In particular if vis=True the hog features are visualized using `hog()` visualize flag.  In this case the resulting visualization image: hog_image is returned along with the features vector in an unflattened format.
 
@@ -58,10 +39,10 @@ Here is the visualization of HOG features:
 
 
 
-#### 2. Explain how you settled on your final choice of HOG parameters.
+#### 2. HOG parameters.
 
 
-Next, I specify the various parameters used to extract features from the resulting images and later to use the sliding windows to classify parts of the image as car or not car.  These parameters are specified in lines 343-352.  They were picked largely by experimentation with testing on test images. In particular, choosing various color spaces and orientations parameters had the largest effect on the results.  Here is the example of trying out various parameter combinations and the resulting detections on a test image:
+Following are the various parameters used to extract features from the resulting images and later to use the sliding windows to classify parts of the image as car or not car.  These parameters are specified in lines 343-352.  They were picked largely by experimentation with testing on test images. In particular, choosing various color spaces and orientations parameters had the largest effect on the results.  Here is the example of trying out various parameter combinations and the resulting detections on a test image:
 
 HSV colorspace, 10 orientations, 32x32 spatial size
 
@@ -79,17 +60,17 @@ YCrCb colorspace, 10 orientations, 64x64 spatial size, y range limits
 
 ![alt text][image3_2]
 
-In the end I chose the last configuration as the best one.
+In the end the last configuration was the best one.
 
-I separated my pipeline into the training part and vehicle detection part, so that when I was happy with the accuracy of the training I could just load the classifier with pickle and work on detection pipeline.  Hence, training was done only if the `training` flag was set to `True` in line 385.  
+The pipeline was separated into the training part and vehicle detection part, so that when the accuracy of the training is acceptable the classifier can be loaded with pickle.  Hence, training was done only if the `training` flag was set to `True` in line 385.  
 
-#### 3. Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
+#### 3. Training
 
-In line 420-424, I trained a linear SVM with the final parameter values of:
+In line 420-424, a linear SVM is trained.
 
 ### Sliding Window Search
 
-#### 1. Describe how (and identify where in your code) you implemented a sliding window search.  How did you decide what scales to search and how much to overlap windows?
+#### 1. Sliding Window Search
 
 The sliding window search is implemented in `find_cars()` function in lines 144-206, which is based on the lectures. I chose this method as it extracts the features once for the whole frame and subsamples them later. In particular, based on specified range of y values the function takes a `spatial_size` cutouts of the image, resizes to the size of training data and runs the prediction of the classifier to check if it represents a car.  In this case the coordinates of that cutout window are appended to `bbox_list`. The function is called in lines 250-25 with two different scales.  I use a smaller scale of 1.2 for y values farther away and a larger scale of 1.8 for closer y values.  The exact parameters were obtained by experimentation.  The original overlap from lectures worked well so I left it as is.  Here is the result on a single test image.
 
@@ -97,7 +78,7 @@ The sliding window search is implemented in `find_cars()` function in lines 144-
 
 ![alt text][image3_2]
 
-#### 2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to optimize the performance of your classifier?
+#### 2. Performance Optimization
 
 I experimented with various scales including using three and four different scales.  To optimize the performance I ended up using only two scales.  I also specified y ranges so that the different scales are used on different part of the images.  Here are some test image results with corresponding single frame heat maps:
 
@@ -112,11 +93,12 @@ I experimented with various scales including using three and four different scal
 
 ### Video Implementation
 
-#### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (somewhat wobbly or unstable bounding boxes are ok as long as you are identifying the vehicles most of the time with minimal false positives.)
+#### 1.Vehicle Detection Pipeline
+
 Here's a [link to my video result](./detect.mp4)
 
 
-#### 2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
+#### 2. False Positives Filter
 
 I created a heatmap of positive detections in each frame of the video as well as used a three dimensional numpy array to keep track of the sum of the the last 8 heatmaps.  This is done in lines 260-267.  This proved to be a simple and effective way to deal with false negatives as I could then just threshold on the sum of the heatmaps in line 275 to identify vehicle positions.  
 
@@ -137,10 +119,6 @@ Here is an example on three of the frames with increasing total intensity of the
 ---
 
 ### Discussion
-
-#### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
-
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
 
 The first task was to put together a working pipeline that would detect (even badly) cars vs no cars.  Here I mainly used the functions from the lessons.  After successfully training on my laptop I was getting some results.
 
